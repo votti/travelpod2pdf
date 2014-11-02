@@ -14,11 +14,15 @@ import os
 # pdb.set_trace()
 # general info about scraping
 # http://docs.python-guide.org/en/latest/scenarios/scrape/
+
+
 class TPloader(object):
     def __init__(self):
         self.entryURL ='http://blog.travelpod.com/travel-blog-entries/v_f/1/PASTEIDHERE/tpod.html'
         self.galleryURL = 'http://www.travelpod.com/tools/pbrowser/v_f/1/PASTEIDHERE'
-    def getEntryDict(self,mainURL):
+    
+    
+    def getEntryDict(self, mainURL):
         req = self.loadURL(mainURL)
         tree = html.fromstring(req.text)
         #text_file = open("/home/vitoz/Documents/Output.txt", "w") 
@@ -34,26 +38,33 @@ class TPloader(object):
         for entry in entryDict:
             entry['id'] = entry['href'].split('/')[4] 
         self.entryDict = entryDict
-        
+       
+       
     def getEntryContents(self):
         for entry in self.entryDict:
             self.getEntryText(entry)
             self.getEntryGallery(entry)
     
-    def saveEntryDict(self,fPath):
+    
+    def saveEntryDict(self, fPath):
         with open(fPath, "w") as outfile:
             json.dump(self.entryDict, outfile, indent=4)
             
-    def loadEntryDict(self,fPath):
+            
+    def loadEntryDict(self, fPath):
         with open(fPath, "r") as impFile:
             self.entryDict = json.load(impFile)
+            
+            
     # Funktions to scrap data from the pages    
-    def getEntryText(self,entry):
+    def getEntryText(self, entry):
         entryURL =self.entryURL.replace('PASTEIDHERE',entry['id'])
         req = self.loadURL(entryURL)
         tree = html.fromstring(req.text)
         tags = tree.xpath('//div[@id="post"]/text()')
         entry['maintxt']="".join(tags).strip()       
+        
+        
         
     def getEntryGallery(self,entry):
         galleryURL =self.galleryURL.replace('PASTEIDHERE',entry['id'])
