@@ -73,10 +73,15 @@ class TPloader(object):
         entry['gallery'] = galDict['data']
     
     def downloadImages(self,imgDir):
-        # list all files in the directory
-        curFiles=os.listdir(imgDir) 
+        # list all files in the directory in a folderstructure
+        # with all files in a folder with the entry id
+        curDirs=os.listdir(imgDir) 
         for entry in self.entryDict:
-            pdb.set_trace()
+            entryDir = self.getImgFolder(entry,imgDir)
+            if not(entry['id'] in curDirs):
+                os.mkdir(entryDir)
+            curFiles = os.listdir(entryDir)
+            
             for photo in entry['gallery']: 
                 #pdb.set_trace()
                 imgURL = photo['img']
@@ -84,21 +89,29 @@ class TPloader(object):
                 imgName = imgURL.split('/')[-1]
                 if imgName in curFiles:
                     continue
-                urllib.urlretrieve(imgURL,os.path.join(imgDir,imgName))
+                urllib.urlretrieve(imgURL,self.getImgPath(photo,entry,entryDir))
                 
     # Helper functions    
     def loadURL(self,url):
         req = requests.get(url)
         return(req)
+    def getImgFolder(self,entry,imgDir):
+        entryDir = os.path.join(imgDir,entry['id'])
+        return(entryDir)
+
+    def getImgPath(self,photo,entry,imgDir):
+        entryDir = self.getImgFolder(entry,imgDir)
+        imgName = photo['img'].split('/')[-1]
+        return(os.path.join(entryDir,imgName))
         
 if __name__ == '__main__':
     ## Test the class
     url = 'http://www.travelpod.com/travel-blog/v_f/1/tpod.html'
     loadTP = TPloader()
-    loadTP.loadEntryDict('/home/vitoz/Git/travelpod2pdf/data/entries.json')
-    #loadTP.getEntryDict(url)
-    #loadTP.getEntryContents()
-    #loadTP.saveEntryDict('/home/vitoz/Git/travelpod2pdf/data/entries.json')
+    #loadTP.loadEntryDict('/home/vitoz/Git/travelpod2pdf/data/entries.json')
+    loadTP.getEntryDict(url)
+    loadTP.getEntryContents()
+    loadTP.saveEntryDict('/home/vitoz/Git/travelpod2pdf/data/entries.json')
     
     #loadTP.downloadImages('/home/vitoz/Git/travelpod2pdf/data/img')
     
