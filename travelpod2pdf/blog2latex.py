@@ -31,7 +31,9 @@ class tp2latex(loadTP.TPloader):
         # initiate the latex document        
         self.doc = pytex.Document(filename=filename, author=author,
                      title=title,**kwargs)
-                     
+        code = ''
+        pytex.Varia('bla',package=['geometry'])
+            
     def getMaintxt(self, sectionNr):
         # just very usefull for debugging
         return(lTP.entryDict[sectionNr]['maintxt'])
