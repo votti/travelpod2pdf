@@ -104,6 +104,7 @@ class TPloader(object):
         imgName = photo['img'].split('/')[-1]
         return(os.path.join(entryDir,imgName))
         
+        
 if __name__ == '__main__':
     ## Test the class
     url = 'http://www.travelpod.com/travel-blog/v_f/1/tpod.html'

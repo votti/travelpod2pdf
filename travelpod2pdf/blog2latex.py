@@ -31,12 +31,13 @@ class tp2latex(loadTP.TPloader):
         # initiate the latex document        
         self.doc = pytex.Document(filename=filename, author=author,
                      title=title,**kwargs)
-        code = ''
-        pytex.Varia('bla',package=['geometry'])
+        #code = ''
+        #pytex.Varia('bla',packages=['geometry'])
+        
             
     def getMaintxt(self, sectionNr):
         # just very usefull for debugging
-        return(lTP.entryDict[sectionNr]['maintxt'])
+        return(self.entryDict[sectionNr]['maintxt'])
 
     
     def latexify(self, text):
@@ -51,6 +52,7 @@ class tp2latex(loadTP.TPloader):
         text = text.replace(b'jo\xca\x8a\xcb\x88s\xc9\x9bm\xc9\x99ti'.decode('utf-8'),
                         'Josemite')
         text = text.replace(b'\xc4\x81'.decode('utf-8'),'a')
+        text = text.replace('#','\#')
         # replace superscripts
         return(text)
     
@@ -65,8 +67,13 @@ class tp2latex(loadTP.TPloader):
     def getLatexImgs(self, entry, section):
         for img in entry['gallery']:
             if self.useImg(img):
-                newPic = pytex.pictures.Graphic(self.getImgPath(img,entry,imgDir),
-                                                pos='!htbp',width='0.4')
+                if img['dims']['height'] > img['dims']['width']:
+                    newPic = pytex.pictures.Graphic(self.getImgPath(img,entry,imgDir),
+                                                pos='!htbp',width='150pt')
+
+                else:
+                    newPic = pytex.pictures.Graphic(self.getImgPath(img,entry,imgDir),
+                                                pos='!htbp',width='250pt')
                 #pdb.set_trace()      
                 if img['story'] != '':
                     newPic.add_caption(self.latexify(pytex.utils.bold(img['title']) + ': ' + img['story']))
@@ -92,11 +99,17 @@ class tp2latex(loadTP.TPloader):
 if __name__ == '__main__':
     ## Test the class
     #url = 'http://www.travelpod.com/travel-blog/v_f/1/tpod.html'
-    tp = tp2latex(filename='photibuech',author='VF',title='Um die halbe Welt')
+    tp = tp2latex(filename='photibuech',author='VF',title='Um die halbe Welt',
+                   packages=[pytex.Package('morefloats'),
+                             pytex.Package('geometry',option='a5paper,margin=2cm,footskip=1cm')])
     imgDir ='/home/vitoz/Git/travelpod2pdf/data/img'
+    
+
     tp.loadEntryDict('/home/vitoz/Git/travelpod2pdf/data/entries.json')
     tp.createDoc()
     tp.writeDoc()
+    
+
      
 #latexify(getMaintxt(5)).replace('\xe1\xb8\xa7','h')
 #'ḧ'.encode('utf-8')
