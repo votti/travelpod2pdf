@@ -12,6 +12,7 @@ It keeps to lists of paths of target and orignial files with the attributes
 import exifread
 import os
 import pdb
+import pickle
 
 class ImageMatcher(object):
     def __init__(self):

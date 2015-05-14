@@ -11,6 +11,7 @@ It keeps to list
 import exifread
 import os
 import pdb
+import pickle
 
 class EXIFparser(object):
     def __init__(self):
@@ -67,25 +68,81 @@ class EXIFparser(object):
         print(img)
         return(exiftags)
         
+    def save_exif_dict(self, fPath):
+        with open(fPath, "wb") as outfile:
+            pickle.dump(self.exif_dict, outfile)
+            
+            
+    def load_exif_dict(self, fPath):
+        with open(fPath, "rb") as impFile:
+            self.exif_dict = pickle.load(impFile)
+            
+        
 if __name__ == '__main__':
     #import scipy as sp
     import matplotlib.pyplot as plt
     import collections
-    ## Test the class
-    targetDir ='/home/vitoz/Git/travelpod2pdf/data/img'
-    targetImgs = EXIFparser()
-    targetImgs.add_folder(targetDir,recursive=True)
-    #targetImgs.read_exif(tags=['EXIF DateTimeOriginal','EXIF ShutterSpeedValue','EXIF ExposureTime'], details=False)
-   
+    import numpy as np     ## Test the class
+    
+    doLoad = True
+    originalDir = '/run/user/1000/gvfs/smb-share:server=synvotti,share=photo/VF Fotos/2014/Bilder Weltreise/'   
+    targetDir = '/home/vitoz/Code/travelpod2pdf/data/img/'   
+        
     # mounted with
     # with civfs2 installed
     # sudo mount.civfs https://url:port ~/mnt/home
-    originalDir = '/home/vitoz/mnt/home/photo/VF Fotos/2014/Bilder Weltreise/'  
-    originalImgs = EXIFparser()
-    originalImgs.add_folder(originalDir,recursive=True)
-    #originalImgs.files
-    originalImgs.read_exif( details=True)
+    #originalDir = '/home/vitoz/mnt/home/photo/VF Fotos/2014/Bilder Weltreise/'  
     
+ 
+    originalImgs = EXIFparser()
+    
+    if doLoad is True:
+        originalImgs.load_exif_dict('/home/vitoz/Code/travelpod2pdf/data/originalImgsExif.pickle')
+    else:   
+        originalImgs.add_folder(originalDir,recursive=True)
+        originalImgs.read_exif( details=False)
+        originalImgs.save_exif_dict('/home/vitoz/Code/travelpod2pdf/data/originalImgsExif.pickle')
+   
+    #originalImgs.read_exif( details=True)
+    #originalImgs.save_exif_dict('/home/vitoz/Code/travelpod2pdf/data/originalImgsExif_full.pickle')
+    
+    targetImgs = EXIFparser()
+    
+    if doLoad is True:
+        targetImgs.load_exif_dict('/home/vitoz/Code/travelpod2pdf/data/targetImgsExif.pickle')
+    else:
+        targetImgs.add_folder(targetDir,recursive=True)
+        targetImgs.read_exif( details=False)
+        targetImgs.save_exif_dict('/home/vitoz/Code/travelpod2pdf/data/targetImgsExif.pickle')
+        
+        
+        
+    # Match the images by finding images with most matching fields
+        
+    
+    nOrig = originalImgs.exif_dict.__len__()
+    nTarget= targetImgs.exif_dict.__len__()
+    keyList = next(iter(targetImgs.exif_dict.values())).keys()
+    simMat = np.zeros((nTarget,nOrig),int)
+    keyList = ['EXIF DateTimeOriginal']
+        
+    for (t, targetEntry) in enumerate(targetImgs.exif_dict.values()):
+        for k in keyList:
+            if k in targetEntry.keys():
+                for (o, originalKey) in enumerate(originalImgs.exif_dict):
+                    if k in originalImgs.exif_dict[originalKey].keys():
+                        pdb.set_trace()
+                        
+                        simMat[t,o] =simMat[t,o] + int(targetEntry[k] == originalImgs.exif_dict[originalKey][k])
+                        simMat[t,o] 
+    
+    oImg = '/run/user/1000/gvfs/smb-share:server=synvotti,share=photo/VF Fotos/2014/Bilder Weltreise/2014_03_05 Auckland/'
+    tImg = '/home/vitoz/Code/travelpod2pdf/data/img/1394020787/1.1394020787.abflug.jpg'   
+
+
+    oEntry = originalImgs.exif_dict[oImg]
+    tEntry = targetImgs.exif_dict[tImg]
+    # generate
     # look at images with no tag
     #k = [k for k in imgM.original_dict.keys() if imgM.original_dict[k].__len__() != 1]
     #k = [k for k in imgM.original_dict.keys() if imgM.original_dict[k].__len__() is 1]

@@ -12,11 +12,7 @@ import glob
 import pdb
 from html import unescape
 
-url = 'http://www.travelpod.com/travel-blog/v_f/1/tpod.html'
-texPath = "/home/vitoz/Git/travelpod2pdf/data/"
-blogTitle = 'Reise um die halbe Welt'
 
-os.chdir(texPath)
 #clean up directories
 #r = glob.glob(texPath+'*')
 #for i in r:
@@ -27,19 +23,27 @@ class tp2latex(loadTP.TPloader):
     """ This class inherits from the TPloader class
         and will add the functionality to convert the
         loaded blog into a shiny latex file  """
-    def __init__(self, filename, author, title, **kwargs):
+    def __init__(self, filename, author, title, packages=None,**kwargs):
         # initiate the latex document        
-        self.doc = pytex.Document(filename=filename, author=author,
+        """
+
+        :rtype : object
+        """
+        self.doc = pytex.Document(default_filepath=filename, author=author,
                      title=title,**kwargs)
+
+        if packages is not None:
+            for pack in packages:
+                self.doc.packages.append(pack)
         #code = ''
         #pytex.Varia('bla',packages=['geometry'])
         
             
     def getMaintxt(self, sectionNr):
-        # just very usefull for debugging
+        # just very useful for debugging
         return(self.entryDict[sectionNr]['maintxt'])
 
-    
+
     def latexify(self, text):
         # here non latex conform symbols are replaced
         # replace strange newline character
@@ -58,7 +62,7 @@ class tp2latex(loadTP.TPloader):
     
     
     def useImg(self, galleryImg):
-        """ Only use images that (dont) contain a certain comment """
+        """ Only use images that contain a certain comment """
         if ('<p>  k </p>\n' in galleryImg['comments'].lower()):
             return(True)
         else: 
@@ -67,19 +71,21 @@ class tp2latex(loadTP.TPloader):
     def getLatexImgs(self, entry, section):
         for img in entry['gallery']:
             if self.useImg(img):
+                entry_dir = self.getImgFolder(entry,imgDir)
                 if img['dims']['height'] > img['dims']['width']:
-                    newPic = pytex.pictures.Graphic(self.getImgPath(img,entry,imgDir),
-                                                pos='!htbp',width='150pt')
+                    newpic = pytex.graphics.Figure(position='!htbp')
+                    newpic.add_image(self.getImgPath(img,entry_dir),width=r'150pt')
 
                 else:
-                    newPic = pytex.pictures.Graphic(self.getImgPath(img,entry,imgDir),
-                                                pos='!htbp',width='250pt')
+                    newpic = pytex.graphics.Figure(position='!htbp')
+                    newpic.add_image(self.getImgPath(img,entry_dir),width=r'250pt')
+
                 #pdb.set_trace()      
                 if img['story'] != '':
-                    newPic.add_caption(self.latexify(pytex.utils.bold(img['title']) + ': ' + img['story']))
+                    newpic.add_caption(self.latexify(entry['id']+' '+img['img'].split('/')[-1]+' '+pytex.utils.bold(img['title']) + ': ' + img['story']))
                 else:
-                    newPic.add_caption(self.latexify(pytex.utils.bold(img['title'])))
-                section.append(newPic)
+                    newpic.add_caption(self.latexify(entry['id']+' '+img['img'].split('/')[-1]+' '+pytex.utils.bold(img['title'])))
+                section.append(newpic)
     
     def createDoc(self):
         for entry in self.entryDict:
@@ -89,23 +95,30 @@ class tp2latex(loadTP.TPloader):
             self.doc.append(section)
             
     def writeDoc(self):
-        #self.doc.generate_tex()
+        # self.doc.generate_tex()
         self.doc.generate_pdf(clean=False)        
-        #with open(texPath+'.tex', "w") as outfile:
+        # with open(texPath+'.tex', "w") as outfile:
         #    self.doc.dump(outfile)
   
 
 # If called as a script
 if __name__ == '__main__':
+
+    url = 'http://www.travelpod.com/travel-blog/v_f/1/tpod.html'
+    texPath = "/home/vitoz/Code/travelpod2pdf/data/"
+    blogTitle = 'Reise um die halbe Welt'
+    os.chdir(texPath)
     ## Test the class
     #url = 'http://www.travelpod.com/travel-blog/v_f/1/tpod.html'
     tp = tp2latex(filename='photibuech',author='VF',title='Um die halbe Welt',
-                   packages=[pytex.Package('morefloats'),
-                             pytex.Package('geometry',option='a5paper,margin=2cm,footskip=1cm')])
-    imgDir ='/home/vitoz/Git/travelpod2pdf/data/img'
+                  packages=[pytex.Package('morefloats'),
+                             pytex.Package('geometry',options='a5paper,margin=2cm,footskip=1cm')],
+                  maketitle=True)
+
+    imgDir ='/home/vitoz/Code/travelpod2pdf/data/img'
     
 
-    tp.loadEntryDict('/home/vitoz/Git/travelpod2pdf/data/entries.json')
+    tp.loadEntryDict('/home/vitoz/Code/travelpod2pdf/data/TPentries.json')
     tp.createDoc()
     tp.writeDoc()
     
