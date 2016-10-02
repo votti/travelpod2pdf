@@ -40,7 +40,6 @@ class EXIFparser(object):
         files = [f for f in files if f.lower().endswith(ext)]
         self.add_files(files)
         
-        
     def read_exif(self, tags=None, details=False):
         if tags is None:
             tags = []
@@ -76,7 +75,10 @@ class EXIFparser(object):
     def load_exif_dict(self, fPath):
         with open(fPath, "rb") as impFile:
             self.exif_dict = pickle.load(impFile)
-            
+
+
+def load_and_show(path):
+    plt.imshow(plt.imread(path))
         
 if __name__ == '__main__':
     #import scipy as sp
@@ -92,8 +94,7 @@ if __name__ == '__main__':
     # with civfs2 installed
     # sudo mount.civfs https://url:port ~/mnt/home
     #originalDir = '/home/vitoz/mnt/home/photo/VF Fotos/2014/Bilder Weltreise/'  
-    
- 
+
     originalImgs = EXIFparser()
     
     if doLoad is True:
@@ -102,12 +103,11 @@ if __name__ == '__main__':
         originalImgs.add_folder(originalDir,recursive=True)
         originalImgs.read_exif( details=False)
         originalImgs.save_exif_dict('/home/vitoz/Code/travelpod2pdf/data/originalImgsExif.pickle')
-   
+
     #originalImgs.read_exif( details=True)
     #originalImgs.save_exif_dict('/home/vitoz/Code/travelpod2pdf/data/originalImgsExif_full.pickle')
-    
     targetImgs = EXIFparser()
-    
+
     if doLoad is True:
         targetImgs.load_exif_dict('/home/vitoz/Code/travelpod2pdf/data/targetImgsExif.pickle')
     else:
@@ -123,25 +123,72 @@ if __name__ == '__main__':
     nOrig = originalImgs.exif_dict.__len__()
     nTarget= targetImgs.exif_dict.__len__()
     keyList = next(iter(targetImgs.exif_dict.values())).keys()
+
+    origIds = [k for k in originalImgs.exif_dict.keys()]
+    targetIds = [k for k in targetImgs.exif_dict.keys()]
+
     simMat = np.zeros((nTarget,nOrig),int)
     keyList = ['EXIF DateTimeOriginal']
         
-    for (t, targetEntry) in enumerate(targetImgs.exif_dict.values()):
+    for (t, targetKey) in enumerate(targetIds):
+        targetEntry = targetImgs.exif_dict[targetKey]
         for k in keyList:
             if k in targetEntry.keys():
-                for (o, originalKey) in enumerate(originalImgs.exif_dict):
+                for (o, originalKey) in enumerate(origIds):
                     if k in originalImgs.exif_dict[originalKey].keys():
-                        pdb.set_trace()
-                        
-                        simMat[t,o] =simMat[t,o] + int(targetEntry[k] == originalImgs.exif_dict[originalKey][k])
-                        simMat[t,o] 
-    
-    oImg = '/run/user/1000/gvfs/smb-share:server=synvotti,share=photo/VF Fotos/2014/Bilder Weltreise/2014_03_05 Auckland/'
-    tImg = '/home/vitoz/Code/travelpod2pdf/data/img/1394020787/1.1394020787.abflug.jpg'   
+                        #pdb.set_trace()
+                        simMat[t,o] =simMat[t,o] + int(targetEntry[k].values == originalImgs.exif_dict[originalKey][k].values)
+
+    print('finished')
+
+    simMat.sum(1)
+
+    # which images have more than one match?
+    # -> all images that have a copy!
+    for i in np.where(simMat.sum(1) > 1)[0]:
+        plt.figure()
+        load_and_show(targetIds[i])
+        for j in np.where(simMat[i,:] >0)[0]:
+            print(origIds[j])
+
+    # which images have no match?
+    for i in np.where(simMat.sum(1) ==0)[0]:
+        plt.figure()
+        load_and_show(targetIds[i])
+
+
+    # find common exif-values
+    oImg = '/run/user/1000/gvfs/smb-share:server=synvotti,share=photo/VF Fotos/2014/Bilder Weltreise/2014_03_05 Auckland/IMG_1580.JPG'
+    tImg = '/home/vitoz/Code/travelpod2pdf/data/img/1394020787/1.1394020787.abflug.jpg'
+
+    oImg = '/run/user/1000/gvfs/smb-share:server=synvotti,share=photo/VF Fotos/2014/Bilder Weltreise/2014_04_08 Murramarang NP/IMG_3347.JPG'
+    tImg = targetIds[593]
 
 
     oEntry = originalImgs.exif_dict[oImg]
     tEntry = targetImgs.exif_dict[tImg]
+
+    oEntry
+    tEntry
+
+
+    # manually check exif:
+    img = tImg
+    img = '/home/vitoz/Downloads/1.1396989897.h.jpg'
+    details = True
+    f = open(img, 'rb')
+    if tags.__len__() == 0:
+        exiftags = exifread.process_file(f, details=details)
+
+    elif tags.__len__() == 1:
+        exiftags = exifread.process_file(f, details=details, stop_tag=tags[0])
+        #pdb.set_trace()
+        exiftags = {t: exiftags[t] for t in tags if t in exiftags.keys()}
+
+    else:
+        exiftags = exifread.process_file(f, details=details)
+        exiftags = {t: exiftags[t] for t in tags if t in exiftags.keys()}
+    print(img)
     # generate
     # look at images with no tag
     #k = [k for k in imgM.original_dict.keys() if imgM.original_dict[k].__len__() != 1]

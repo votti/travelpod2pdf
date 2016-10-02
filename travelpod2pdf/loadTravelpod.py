@@ -17,12 +17,10 @@ import os
 
 
 class TPloader(object):
-    def __init__(self):
-        self.entryURL = "http://blog.travelpod.com/travel-blog-entries/v_f/1/PASTEIDHERE/tpod.html"
-        self.galleryURL = "http://www.travelpod.com/tools/pbrowser/v_f/1/PASTEIDHERE"
 
-
-    def getEntryDict(self, mainURL):
+    def getEntryDict(self, mainURL, entryURL, galleryURL):
+        self.entryURL = entryURL
+        self.galleryURL = galleryURL
         req = self.loadURL(mainURL)
         tree = html.fromstring(req.text)
         # text_file = open("/home/vitoz/Documents/Output.txt", "w")
